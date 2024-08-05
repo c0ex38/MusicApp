@@ -9,7 +9,8 @@ def home(request):
     # Otomatik yönlendirme için gerekli parametreler
     name = request.GET.get('name', 'testuser')
     store_name = request.GET.get('store_name', 'teststore')
-    return redirect(f'/tracking/track/?name={name}&store_name={store_name}')
+    return redirect(f'/track/?name={name}&store_name={store_name}')
+
 
 def track_activity(request):
     name = request.GET.get('name')
@@ -35,12 +36,13 @@ def track_activity(request):
     songs = Song.objects.all()
     announcements = Announcement.objects.filter(is_active=True)
 
-    return render(request, 'track_activity.html', {
+    return render(request, 'tracking/track_activity.html', {
         'name': name,
         'store_name': store_name,
         'songs': songs,
         'announcements': announcements,
     })
+
 
 class SongViewSet(viewsets.ModelViewSet):
     queryset = Song.objects.all()
