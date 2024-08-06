@@ -1,0 +1,27 @@
+<!-- tracking/templates/tracking/admin_activity.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Activity</title>
+</head>
+<body>
+    <h1>User Activities</h1>
+    <ul id="activity-list"></ul>
+
+    <script>
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/track_activity/');
+
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const activityList = document.getElementById('activity-list');
+            const listItem = document.createElement('li');
+            listItem.textContent = `User: ${data.name}, Store: ${data.store_name}, Currently Playing: ${data.song_title}`;
+            activityList.appendChild(listItem);
+        };
+
+        socket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+    </script>
+</body>
+</html>

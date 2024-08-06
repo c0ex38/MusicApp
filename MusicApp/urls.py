@@ -5,8 +5,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('tracking/', include('tracking.urls')),
-    path('', include('tracking.urls')),  # Ana sayfaya yönlendirme
+    path('', include('tracking.urls')),  # Root URL
 ]
 
 if settings.DEBUG:

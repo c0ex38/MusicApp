@@ -1,9 +1,10 @@
 # tracking/consumers.py
 import json
 from channels.generic.websocket import WebsocketConsumer
-from .models import UserActivity
+from .models import Song, UserActivity
+from django.utils import timezone
 
-class ActivityConsumer(WebsocketConsumer):
+class TrackActivityConsumer(WebsocketConsumer):
     def connect(self):
         self.accept()
 
@@ -15,18 +16,25 @@ class ActivityConsumer(WebsocketConsumer):
         name = data['name']
         store_name = data['store_name']
         song_id = data['song_id']
-        timestamp = data['timestamp']
 
-        activity = UserActivity.objects.get(name=name, store_name=store_name)
-        activity.song_id = song_id
-        activity.last_active = timestamp
-        activity.save()
+        if song_id:
+            song = Song.objects.get(id=song_id)
+        else:
+            song = None
+
+        user_activity, created = UserActivity.objects.get_or_create(
+            name=name,
+            store_name=store_name,
+            defaults={'song': song, 'last_active': timezone.now(), 'current_time': '00:00'}
+        )
+
+        if not created:
+            user_activity.song = song
+            user_activity.last_active = timezone.now()
+            user_activity.save()
 
         self.send(text_data=json.dumps({
             'name': name,
             'store_name': store_name,
-            'song': activity.song.title if activity.song else '',
-            'timestamp': timestamp
+            'song_title': song.title if song else '',
         }))
-
-
