@@ -3,5 +3,6 @@ from django.urls import path
 from . import consumers
 
 websocket_urlpatterns = [
-    path('ws/track_activity/', consumers.TrackActivityConsumer.as_asgi()),
+    path('ws/activity/', consumers.ActivityConsumer.as_asgi()),
+    path('ws/admin/', consumers.AdminConsumer.as_asgi()),
 ]

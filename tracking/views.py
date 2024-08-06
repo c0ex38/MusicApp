@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import viewsets
 from .serializers import SongSerializer, UserActivitySerializer
 
+
 def home(request):
     # URL parametrelerini alın
     name = request.GET.get('name', 'testuser')
@@ -13,6 +14,7 @@ def home(request):
     # Parametreleri kodlayın
     query_params = urlencode({'name': name, 'store_name': store_name})
     return redirect(f'/track/?{query_params}')
+
 
 def track_activity(request):
     name = request.GET.get('name')
@@ -45,6 +47,7 @@ def track_activity(request):
         'announcements': announcements,
     })
 
+
 def track_activity_by_name_and_store(request, name, store_name):
     song_id = request.GET.get('song_id')
 
@@ -74,9 +77,11 @@ def track_activity_by_name_and_store(request, name, store_name):
         'announcements': announcements,
     })
 
+
 class SongViewSet(viewsets.ModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
+
 
 class UserActivityViewSet(viewsets.ModelViewSet):
     queryset = UserActivity.objects.all()

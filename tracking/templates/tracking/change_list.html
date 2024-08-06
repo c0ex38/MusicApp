@@ -1,0 +1,21 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+{{ block.super }}
+<div id="notifications" style="position: fixed; top: 10px; right: 10px; z-index: 1000;"></div>
+<script>
+    const adminSocket = new WebSocket('ws://' + window.location.host + '/ws/admin/');
+
+    adminSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const notificationElement = document.createElement('div');
+        notificationElement.className = 'alert alert-info';
+        notificationElement.innerText = data.message;
+        document.getElementById('notifications').appendChild(notificationElement);
+
+        setTimeout(() => {
+            notificationElement.remove();
+        }, 5000);
+    };
+</script>
+{% endblock %}

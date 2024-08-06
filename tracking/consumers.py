@@ -1,10 +1,10 @@
-# tracking/consumers.py
 import json
 from channels.generic.websocket import WebsocketConsumer
-from .models import Song, UserActivity
+from .models import UserActivity, Song
 from django.utils import timezone
+from asgiref.sync import async_to_sync
 
-class TrackActivityConsumer(WebsocketConsumer):
+class ActivityConsumer(WebsocketConsumer):
     def connect(self):
         self.accept()
 
@@ -17,9 +17,9 @@ class TrackActivityConsumer(WebsocketConsumer):
         store_name = data['store_name']
         song_id = data['song_id']
 
-        if song_id:
+        try:
             song = Song.objects.get(id=song_id)
-        else:
+        except Song.DoesNotExist:
             song = None
 
         user_activity, created = UserActivity.objects.get_or_create(
@@ -33,8 +33,41 @@ class TrackActivityConsumer(WebsocketConsumer):
             user_activity.last_active = timezone.now()
             user_activity.save()
 
-        self.send(text_data=json.dumps({
+        notification = {
             'name': name,
             'store_name': store_name,
-            'song_title': song.title if song else '',
-        }))
+            'song_title': song.title if song else 'N/A',
+            'message': f"{name} started listening to {song.title if song else 'N/A'} at {store_name}"
+        }
+
+        async_to_sync(self.channel_layer.group_send)(
+            'admin_notifications',
+            {
+                'type': 'send_notification',
+                'notification': notification
+            }
+        )
+
+        self.send(text_data=json.dumps(notification))
+
+    def send_notification(self, event):
+        notification = event['notification']
+        self.send(text_data=json.dumps(notification))
+
+class AdminConsumer(WebsocketConsumer):
+    def connect(self):
+        async_to_sync(self.channel_layer.group_add)(
+            'admin_notifications',
+            self.channel_name
+        )
+        self.accept()
+
+    def disconnect(self, close_code):
+        async_to_sync(self.channel_layer.group_discard)(
+            'admin_notifications',
+            self.channel_name
+        )
+
+    def send_notification(self, event):
+        notification = event['notification']
+        self.send(text_data=json.dumps(notification))

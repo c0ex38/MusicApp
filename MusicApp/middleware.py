@@ -1,7 +1,5 @@
-# MusicApp/middleware.py
 from django.shortcuts import redirect
 import re
-
 
 class CustomRedirectMiddleware:
     def __init__(self, get_response):
@@ -13,7 +11,7 @@ class CustomRedirectMiddleware:
         if match:
             name = match.group('name')
             store = match.group('store')
-            query_params = f'?name={name}&store={store}'
+            query_params = f'?name={name}&store_name={store}'
             return redirect(f'/track/{query_params}')
 
         response = self.get_response(request)

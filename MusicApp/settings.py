@@ -22,10 +22,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'channels',  # Channels eklendi
-    'tracking',  # Uygulamanız eklendi
-    'rest_framework',  # Django Rest Framework eklendi
+    'channels',
+    'tracking',
 ]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -35,6 +35,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'MusicApp.middleware.CustomRedirectMiddleware',
 ]
 
 ROOT_URLCONF = 'MusicApp.urls'
@@ -56,7 +57,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'MusicApp.wsgi.application'
-ASGI_APPLICATION = 'MusicApp.asgi.application'  # ASGI uygulaması eklendi
+ASGI_APPLICATION = 'MusicApp.asgi.application'
+
 
 CHANNEL_LAYERS = {
     'default': {
