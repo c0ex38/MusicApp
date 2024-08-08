@@ -6,8 +6,8 @@ class CustomRedirectMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        path = request.path
-        match = re.match(r'^/name=(?P<name>[^&]*)&store=(?P<store>[^&]*)$', path)
+        path = request.get_full_path()
+        match = re.match(r'^/\?name=(?P<name>[^&]*)&store_name=(?P<store>[^&]*)$', path)
         if match:
             name = match.group('name')
             store = match.group('store')

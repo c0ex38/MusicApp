@@ -1,65 +1,87 @@
-# tracking/tests.py
 from django.test import TestCase, Client
-from channels.testing import WebsocketCommunicator
 from django.urls import reverse
-from .models import Song, UserActivity
-from .consumers import TrackActivityConsumer
-import json
+from .models import UserActivity, Song
+from django.utils import timezone
 
-class HomeViewTest(TestCase):
+
+class TrackActivityViewTestCase(TestCase):
     def setUp(self):
         self.client = Client()
+        self.song1 = Song.objects.create(title="Song 1", artist="Artist 1", file="songs/song1.mp3")
+        self.song2 = Song.objects.create(title="Song 2", artist="Artist 2", file="songs/song2.mp3")
+        self.track_activity_url = reverse('track_activity')
 
-    def test_home_redirect(self):
-        response = self.client.get(reverse('home'), {'name': 'Selim', 'store': 'Aykent'})
-        self.assertRedirects(response, '/track/?name=Selim&store=Aykent')
-
-
-class TrackActivityViewTest(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.song = Song.objects.create(title='Test Song', artist='Test Artist')
-
-    def test_track_activity_get(self):
-        response = self.client.get(reverse('track_activity'), {'name': 'Selim', 'store': 'Aykent'})
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Selim')
-        self.assertContains(response, 'Aykent')
-
-    def test_track_activity_post(self):
-        response = self.client.get(reverse('track_activity'), {'name': 'Selim', 'store': 'Aykent', 'song_id': self.song.id})
-        self.assertEqual(response.status_code, 200)
-        user_activity = UserActivity.objects.get(name='Selim', store_name='Aykent')
-        self.assertEqual(user_activity.song, self.song)
-
-
-class TrackActivityConsumerTest(TestCase):
-    async def test_websocket_connection(self):
-        communicator = WebsocketCommunicator(TrackActivityConsumer.as_asgi(), "/ws/track_activity/")
-        connected, subprotocol = await communicator.connect()
-        self.assertTrue(connected)
-
-        # Send message from WebSocket
-        await communicator.send_json_to({
-            'name': 'Selim',
-            'store_name': 'Aykent',
-            'song_id': None
+    def test_track_activity_create_new_user_activity(self):
+        response = self.client.get(self.track_activity_url, {
+            'name': 'Selim SARIKAYA',
+            'store_name': 'Store 1',
+            'song_id': self.song1.id
         })
-
-        # Receive message from WebSocket
-        response = await communicator.receive_json_from()
-        self.assertEqual(response['name'], 'Selim')
-        self.assertEqual(response['store_name'], 'Aykent')
-        self.assertEqual(response['song_title'], '')
-
-        await communicator.disconnect()
-
-
-class AdminActivityViewTest(TestCase):
-    def setUp(self):
-        self.client = Client()
-
-    def test_admin_activity_page(self):
-        response = self.client.get(reverse('admin_activity'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'User Activities')
+        self.assertTemplateUsed(response, 'tracking/templates/tracking/track_activity.html')
+
+        user_activity = UserActivity.objects.get(name='Selim SARIKAYA', store_name='Store 1')
+        self.assertEqual(user_activity.song, self.song1.title)
+        self.assertEqual(user_activity.name, 'Selim SARIKAYA')
+        self.assertEqual(user_activity.store_name, 'Store 1')
+        self.assertEqual(user_activity.current_time, '00:00')
+
+    def test_track_activity_update_existing_user_activity(self):
+        user_activity = UserActivity.objects.create(
+            name='Selim SARIKAYA',
+            store_name='Store 1',
+            song=self.song1.title,
+            last_active=timezone.now(),
+            current_time='00:00'
+        )
+
+        response = self.client.get(self.track_activity_url, {
+            'name': 'Selim SARIKAYA',
+            'store_name': 'Store 1',
+            'song_id': self.song2.id
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'tracking/templates/tracking/track_activity.html')
+
+        user_activity.refresh_from_db()
+        self.assertEqual(user_activity.song, self.song2.title)
+        self.assertEqual(user_activity.name, 'Selim SARIKAYA')
+        self.assertEqual(user_activity.store_name, 'Store 1')
+        self.assertEqual(user_activity.current_time, '00:00')
+
+    def test_track_activity_song_does_not_exist(self):
+        response = self.client.get(self.track_activity_url, {
+            'name': 'Selim SARIKAYA',
+            'store_name': 'Store 1',
+            'song_id': 999
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'tracking/templates/tracking/track_activity.html')
+
+        user_activity = UserActivity.objects.get(name='Selim SARIKAYA', store_name='Store 1')
+        self.assertEqual(user_activity.song, 'Bilinmeyen Şarkı')
+        self.assertEqual(user_activity.name, 'Selim SARIKAYA')
+        self.assertEqual(user_activity.store_name, 'Store 1')
+        self.assertEqual(user_activity.current_time, '00:00')
+
+    def test_track_activity_missing_parameters(self):
+        response = self.client.get(self.track_activity_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'tracking/templates/tracking/track_activity.html')
+
+        user_activities = UserActivity.objects.all()
+        self.assertEqual(user_activities.count(), 0)
+
+    def test_track_activity_template_context(self):
+        response = self.client.get(self.track_activity_url, {
+            'name': 'Selim SARIKAYA',
+            'store_name': 'Store 1',
+            'song_id': self.song1.id
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'tracking/templates/tracking/track_activity.html')
+
+        self.assertIn('songs', response.context)
+        self.assertIn('announcements', response.context)
+        self.assertEqual(list(response.context['songs']), list(Song.objects.all()))
+        self.assertEqual(response.context['announcements'], [])

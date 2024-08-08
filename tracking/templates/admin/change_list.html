@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+  <h1>{% trans "User activities by store" %}</h1>
+  <div class="user-activities-grouped">
+    {% for store, activities in grouped_queryset.items %}
+      <h2>{{ store }}</h2>
+      <table class="user-activities-table">
+        <thead>
+          <tr>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "Store Name" %}</th>
+            <th>{% trans "Song" %}</th>
+            <th>{% trans "Current Time" %}</th>
+            <th>{% trans "Active" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for activity in activities %}
+            <tr>
+              <td>{{ activity.name }}</td>
+              <td>{{ activity.store_name }}</td>
+              <td>{{ activity.song }}</td>
+              <td>{{ activity.current_time }}</td>
+              <td>
+                {% if activity.is_active %}
+                  <span style="color:green;">&#x2714;</span>
+                {% else %}
+                  <span style="color:red;">&#x2716;</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endfor %}
+  </div>
+{% endblock %}

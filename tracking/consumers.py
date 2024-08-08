@@ -25,11 +25,11 @@ class ActivityConsumer(WebsocketConsumer):
         user_activity, created = UserActivity.objects.get_or_create(
             name=name,
             store_name=store_name,
-            defaults={'song': song, 'last_active': timezone.now(), 'current_time': '00:00'}
+            defaults={'song': song.title if song else 'Bilinmeyen Şarkı', 'last_active': timezone.now(), 'current_time': '00:00'}
         )
 
         if not created:
-            user_activity.song = song
+            user_activity.song = song.title if song else 'Bilinmeyen Şarkı'
             user_activity.last_active = timezone.now()
             user_activity.save()
 
